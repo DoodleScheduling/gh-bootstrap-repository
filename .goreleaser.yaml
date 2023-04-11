@@ -36,8 +36,6 @@ dockers:
   - ghcr.io/doodlescheduling/{{ .ProjectName }}:v{{ .Version }}-amd64
   dockerfile: Dockerfile
   use: buildx
-  extra_files:
-  - assets
   ids:
   - gh-bootstrap-repository
   build_flag_templates:
@@ -55,8 +53,6 @@ dockers:
   goarch: arm64
   dockerfile: Dockerfile
   use: buildx
-  extra_files:
-  - assets
   ids:
   - gh-bootstrap-repository
   build_flag_templates:
