@@ -1,11 +1,6 @@
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM amazoncorretto:11
+FROM gcr.io/distroless/static:nonroot
 WORKDIR /
-COPY manager manager
+COPY gh-bootstrap-repository gh-bootstrap-repository
 USER 65532:65532
-COPY assets /assets
-ENV ASSETS_PATH="/assets"
-ENV USER k8skeycloak-controller
 
-ENTRYPOINT ["/manager"]
+ENTRYPOINT ["/gh-bootstrap-repository"]
