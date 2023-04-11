@@ -41,7 +41,7 @@ func main() {
 	err := rootCmd.Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, err.Error()+"\n\n")
-		rootCmd.Help()
+		_ = rootCmd.Help()
 		os.Exit(1)
 	}
 }
