@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/doodlescheduling/create-repository/internal/repository"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v51/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 )
@@ -39,6 +40,8 @@ var (
 func main() {
 	err := rootCmd.Execute()
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, err.Error()+"\n\n")
+		rootCmd.Help()
+		os.Exit(1)
 	}
 }

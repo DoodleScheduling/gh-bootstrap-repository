@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/go-git/go-git/v5"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v51/github"
 )
 
 type manager struct {
@@ -38,13 +38,21 @@ func (m *manager) CreateRepository(ctx context.Context, name string, fromReposit
 		return err
 	}
 
-	var org string
+	var org *github.Organization
+	var orgName string
 	if *user.Login != owner {
-		org = owner
+		o, _, err := m.ghClient.Organizations.Get(ctx, owner)
+		if err != nil {
+			return err
+		}
+
+		org = o
+		orgName = owner
 	}
 
+	// Create repository
 	init := true
-	repo, _, err := m.ghClient.Repositories.Create(ctx, org, &github.Repository{
+	repo, _, err := m.ghClient.Repositories.Create(ctx, orgName, &github.Repository{
 		Name:             &name,
 		Description:      origin.repo.Description,
 		Private:          origin.repo.Private,
@@ -63,29 +71,40 @@ func (m *manager) CreateRepository(ctx context.Context, name string, fromReposit
 		return err
 	}
 
+	// Setup default branch
+	if repo.DefaultBranch != origin.repo.DefaultBranch {
+		_, _, err := m.ghClient.Repositories.RenameBranch(ctx, owner, name, *repo.DefaultBranch, *origin.repo.DefaultBranch)
+		if err != nil {
+			return fmt.Errorf("failed to rename the default branch: %w", err)
+		}
+	}
+
+	// Copy repository content
 	err = m.initialCommit(ctx, origin.repo, repo)
 	if err != nil {
 		return fmt.Errorf("failed to clone origin repository: %w", err)
 	}
 
-	/*for _, team := range origin.teams {
-		permissions := *collaborator.Permission
+	// Add org teams as collaborators
+	if org != nil {
+		for _, team := range origin.teams {
+			_, err = m.ghClient.Teams.AddTeamRepoByID(ctx, *org.ID, team.GetID(), owner, name, &github.TeamAddTeamRepoOptions{
+				Permission: *team.Permission,
+			})
 
-		_, err = m.ghClient.Repositories.Tea(ctx, owner, name, *collaborator.Login, &github.RepositoryAddCollaboratorOptions{
-			Permission: *team.Permission,
-		})
-
-		if err != nil {
-			return err
+			if err != nil {
+				return err
+			}
 		}
-	}*/
+	}
 
+	// Set repo topics
 	_, _, err = m.ghClient.Repositories.ReplaceAllTopics(ctx, owner, name, origin.topics)
-
 	if err != nil {
 		return err
 	}
 
+	// Add branch protections
 	for _, branchProtection := range origin.branchProtecions {
 		var restrictions *github.BranchRestrictionsRequest
 		if branchProtection.protection.Restrictions != nil && (len(branchProtection.protection.Restrictions.Users) > 0 || len(branchProtection.protection.Restrictions.Teams) > 0) {
@@ -96,7 +115,7 @@ func (m *manager) CreateRepository(ctx context.Context, name string, fromReposit
 		}
 
 		var dismiss *github.DismissalRestrictionsRequest
-		if branchProtection.protection.RequiredPullRequestReviews != nil && (len(branchProtection.protection.RequiredPullRequestReviews.DismissalRestrictions.Users) > 0 || len(branchProtection.protection.RequiredPullRequestReviews.DismissalRestrictions.Teams) > 0) {
+		if branchProtection.protection.RequiredPullRequestReviews != nil && branchProtection.protection.RequiredPullRequestReviews.DismissalRestrictions != nil && (len(branchProtection.protection.RequiredPullRequestReviews.DismissalRestrictions.Users) > 0 || len(branchProtection.protection.RequiredPullRequestReviews.DismissalRestrictions.Teams) > 0) {
 			dismissalUsers := usersToString(branchProtection.protection.RequiredPullRequestReviews.DismissalRestrictions.Users)
 			dismissalTeams := teamsToString(branchProtection.protection.RequiredPullRequestReviews.DismissalRestrictions.Teams)
 
@@ -183,7 +202,7 @@ func (m *manager) initialCommit(ctx context.Context, originRepo *github.Reposito
 		return fmt.Errorf("failed to add files to repository workdir: %w", err)
 	}
 
-	if _, err := w.Commit(fmt.Sprintf("clone from origin repository %s/%s", *originRepo.Owner, *originRepo.Name), &git.CommitOptions{}); err != nil {
+	if _, err := w.Commit(fmt.Sprintf("chore: clone from origin repository %s/%s", *originRepo.Owner.Login, *originRepo.Name), &git.CommitOptions{}); err != nil {
 		return fmt.Errorf("failed commit initial commit: %w", err)
 	}
 
