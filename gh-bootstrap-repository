@@ -1,11 +1,8 @@
-#!/usr/bin/env bash
-set -e
+#!/bin/bash
 
 repo="DoodleScheduling/gh-bootstrap-repository"
-tag="v0.0.1"
-
 extension_path="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-tag_path="${extension_path}/dist/${tag}"
+tag_path="${extension_path}/dist"
 exe="gh-bootstrap-repository"
 platform=""
 extension=""
@@ -35,9 +32,9 @@ determine_platform() {
 
 download_latest_release() {
   mkdir -p "${tag_path}"
-  gh release -R "${repo}" download "${tag}" --pattern "*${platform}*" --dir="${tag_path}"
-  mv "${tag_path}/${exe}_${tag}_${platform}${extension}" "${tag_path}/${exe}"
-  chmod +x "${tag_path}/${exe}"
+  gh release -R "${repo}" download --pattern "*${platform}*" --dir="${tag_path}"
+  tar=$(ls ${tag_path}/${exe}_*_${platform}.tar.gz)
+  tar -xzf $tar -C "${tag_path}"
 }
 
 if [ ! -e "${tag_path}/${exe}" ]; then
