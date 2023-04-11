@@ -25,9 +25,15 @@ gh extension install DoodleScheduling/gh-bootstrap-repository
 ```
 
 ### Usage
-```
-gh bootstrap-repository
+The following command will attempt to create a repository called `myorg/my-repository`
+with all the settings and content taken from `myorg/from-repository`.
 
+```
+gh bootstrap-repository myorg/my-repository myorg/from-repository
+```
+
+Command line help:
+```
 expects [repository-name] [origin-repository] as arguments
 
 Usage:

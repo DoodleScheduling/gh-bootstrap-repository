@@ -14,12 +14,12 @@ import (
 
 var (
 	rootCmd = &cobra.Command{
-		Use:           "gh-bootstrap-repository [repository-name] [origin-repository]",
+		Use:           "gh-bootstrap-repository [owner/repository-name] [owner/origin-repository]",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) != 2 {
-				return errors.New("expects [repository-name] [origin-repository] as arguments")
+				return errors.New("expects [owner/repository-name] [owner/origin-repository] as arguments")
 			}
 
 			name, fromRepository := args[0], args[1]
