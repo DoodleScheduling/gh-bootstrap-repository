@@ -1,18 +1,19 @@
 project_name: gh-bootstrap-repository
 
 builds:
-- id: manager
-  binary: manager
+- id: gh-bootstrap-repository
+  binary: gh-bootstrap-repository
+  main: ./cmd/
   goos:
   - linux
   env:
   - CGO_ENABLED=0
 
 archives:
-- id: manager
-  name_template: "manager_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+- id: gh-bootstrap-repository
+  name_template: "gh-bootstrap-repository_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
   builds:
-  - manager
+  - gh-bootstrap-repository
 
 checksum:
   name_template: 'checksums.txt'
@@ -38,7 +39,7 @@ dockers:
   extra_files:
   - assets
   ids:
-  - manager
+  - gh-bootstrap-repository
   build_flag_templates:
   - --platform=linux/amd64
   - --label=org.opencontainers.image.title={{ .ProjectName }}
@@ -57,7 +58,7 @@ dockers:
   extra_files:
   - assets
   ids:
-  - manager
+  - gh-bootstrap-repository
   build_flag_templates:
   - --platform=linux/arm64/v8
   - --label=org.opencontainers.image.title={{ .ProjectName }}
