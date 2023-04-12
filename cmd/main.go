@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/doodlescheduling/create-repository/internal/repository"
+	"github.com/doodlescheduling/gh-bootstrap-repository/internal/repository"
 	"github.com/google/go-github/v51/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"

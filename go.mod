@@ -1,4 +1,4 @@
-module github.com/doodlescheduling/create-repository
+module github.com/doodlescheduling/gh-bootstrap-repository
 
 go 1.20
 
