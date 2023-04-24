@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
 	"github.com/google/go-github/v51/github"
 )
 
@@ -51,7 +52,6 @@ func (m *manager) CreateRepository(ctx context.Context, name string, fromReposit
 	}
 
 	// Create repository
-	init := true
 	repo, _, err := m.ghClient.Repositories.Create(ctx, orgName, &github.Repository{
 		Name:             &name,
 		Description:      origin.repo.Description,
@@ -64,25 +64,24 @@ func (m *manager) CreateRepository(ctx context.Context, name string, fromReposit
 		HasWiki:          origin.repo.HasWiki,
 		HasPages:         origin.repo.HasPages,
 		Homepage:         origin.repo.Homepage,
-		AutoInit:         &init,
 	})
 
 	if err != nil {
 		return err
 	}
 
-	// Setup default branch
-	if repo.DefaultBranch != origin.repo.DefaultBranch {
-		_, _, err := m.ghClient.Repositories.RenameBranch(ctx, owner, name, *repo.DefaultBranch, *origin.repo.DefaultBranch)
-		if err != nil {
-			return fmt.Errorf("failed to rename the default branch: %w", err)
-		}
-	}
-
 	// Copy repository content
 	err = m.initialCommit(ctx, origin.repo, repo)
 	if err != nil {
 		return fmt.Errorf("failed to clone origin repository: %w", err)
+	}
+
+	// Setup default branch
+	if *origin.repo.DefaultBranch != "master" {
+		_, _, err := m.ghClient.Repositories.RenameBranch(ctx, owner, name, "master", *origin.repo.DefaultBranch)
+		if err != nil {
+			return fmt.Errorf("failed to rename the default branch: %w", err)
+		}
 	}
 
 	// Add org teams as collaborators
@@ -172,11 +171,7 @@ func (m *manager) initialCommit(ctx context.Context, originRepo *github.Reposito
 
 	defer os.RemoveAll(bootstrap)
 
-	repo, err := git.PlainClone(bootstrap, false, &git.CloneOptions{
-		URL:      *bootstrapRepo.SSHURL,
-		Progress: os.Stdout,
-	})
-
+	repo, err := git.PlainInit(bootstrap, false)
 	if err != nil {
 		return fmt.Errorf("failed to clone bootstrap repository: %w", err)
 	}
@@ -206,7 +201,19 @@ func (m *manager) initialCommit(ctx context.Context, originRepo *github.Reposito
 		return fmt.Errorf("failed commit initial commit: %w", err)
 	}
 
-	if err := repo.Push(&git.PushOptions{}); err != nil {
+	refspec := config.RefSpec("+refs/heads/*:refs/remotes/origin/*")
+
+	// Creating default remote
+	_, err = repo.CreateRemote(&config.RemoteConfig{
+		Name:  "origin",
+		URLs:  []string{*bootstrapRepo.SSHURL},
+		Fetch: []config.RefSpec{refspec},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create remote: %w", err)
+	}
+
+	if err := repo.Push(&git.PushOptions{RemoteName: "origin"}); err != nil {
 		return fmt.Errorf("failed to push initial commit: %w", err)
 	}
 
