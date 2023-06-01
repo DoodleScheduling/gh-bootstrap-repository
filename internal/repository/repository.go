@@ -76,14 +76,6 @@ func (m *manager) CreateRepository(ctx context.Context, name string, fromReposit
 		return fmt.Errorf("failed to clone origin repository: %w", err)
 	}
 
-	// Setup default branch
-	if *origin.repo.DefaultBranch != "master" {
-		_, _, err := m.ghClient.Repositories.RenameBranch(ctx, owner, name, "master", *origin.repo.DefaultBranch)
-		if err != nil {
-			return fmt.Errorf("failed to rename the default branch: %w", err)
-		}
-	}
-
 	// Add org teams as collaborators
 	if org != nil {
 		for _, team := range origin.teams {
@@ -201,19 +193,22 @@ func (m *manager) initialCommit(ctx context.Context, originRepo *github.Reposito
 		return fmt.Errorf("failed commit initial commit: %w", err)
 	}
 
-	refspec := config.RefSpec("+refs/heads/*:refs/remotes/origin/*")
-
 	// Creating default remote
 	_, err = repo.CreateRemote(&config.RemoteConfig{
-		Name:  "origin",
-		URLs:  []string{*bootstrapRepo.SSHURL},
-		Fetch: []config.RefSpec{refspec},
+		Name: "origin",
+		URLs: []string{*bootstrapRepo.SSHURL},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create remote: %w", err)
 	}
 
-	if err := repo.Push(&git.PushOptions{RemoteName: "origin"}); err != nil {
+	pushOpts := git.PushOptions{
+		RemoteName: "origin",
+		Progress:   os.Stdout,
+		RefSpecs:   []config.RefSpec{config.RefSpec(fmt.Sprintf("+refs/heads/master:refs/heads/%s", originRepo.GetDefaultBranch()))},
+	}
+
+	if err := repo.Push(&pushOpts); err != nil {
 		return fmt.Errorf("failed to push initial commit: %w", err)
 	}
 
