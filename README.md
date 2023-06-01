@@ -43,3 +43,7 @@ Flags:
   -h, --help   help for gh-bootstrap-repository
 
 ```
+
+### Required Permissions
+It is required to be in the list of repository admins in the origin repository.
+The repository creation will fail otherwise.
