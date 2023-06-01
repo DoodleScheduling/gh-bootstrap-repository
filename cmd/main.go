@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cli/go-gh/pkg/auth"
+	"github.com/cli/go-gh/v2/pkg/auth"
 	"github.com/doodlescheduling/gh-bootstrap-repository/internal/repository"
 	"github.com/google/go-github/v52/github"
 	"github.com/spf13/cobra"
