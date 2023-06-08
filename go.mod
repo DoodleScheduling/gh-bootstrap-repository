@@ -3,7 +3,7 @@ module github.com/doodlescheduling/gh-bootstrap-repository
 go 1.20
 
 require (
-	github.com/cli/go-gh/v2 v2.0.0
+	github.com/cli/go-gh/v2 v2.0.1
 	github.com/go-git/go-git/v5 v5.7.0
 	github.com/google/go-github/v52 v52.0.0
 	github.com/spf13/cobra v1.7.0
